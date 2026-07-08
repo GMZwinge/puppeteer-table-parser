@@ -1,4 +1,5 @@
 import {
+  CellTextSource,
   FullParserSettings,
   ParserSettings,
   ParserSettingsOptional,
@@ -28,6 +29,7 @@ export const defaultSettings: ParserSettingsOptional = {
   headerRowsCellSelector: 'td,th',
   bodyRowsSelector: 'tbody tr',
   bodyRowsCellSelector: 'td',
+  cellTextSource: CellTextSource.INNER_TEXT,
   excludedColumns: undefined,
 };
 
@@ -104,6 +106,14 @@ export function validateSettings(
   if (settings.rowValuesAsObject && settings.rowValuesAsArray) {
     throw new InvalidSettingsError(
       `Cannot combine "rowValuesAsObject" with "rowValuesAsArray" options!`,
+    );
+  }
+
+  if (!Object.values(CellTextSource).includes(settings.cellTextSource)) {
+    throw new InvalidSettingsError(
+      `'cellTextSource' must be one of: ${Object.values(CellTextSource)
+        .map((v) => `'${v}'`)
+        .join(', ')}`,
     );
   }
 }

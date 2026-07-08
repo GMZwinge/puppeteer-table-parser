@@ -2,7 +2,7 @@ import { Server } from 'http';
 import { promisify } from 'util';
 import { createServer, getBaseUrl } from './createServer';
 import { Browser, launch, Page } from 'puppeteer';
-import { tableParser, RowValidationPolicy } from '../src';
+import { tableParser, RowValidationPolicy, CellTextSource } from '../src';
 
 describe('Basic parsing', () => {
   let server: Server;
@@ -575,6 +575,52 @@ describe('Basic parsing', () => {
       A1;B1;C1
       A1;;C1"
     `);
+  });
+
+  it('Parses using textContent cell source (faster path) with identical output on a clean table', async () => {
+    await page.goto(`${getBaseUrl()}/1.html`);
+
+    const options = {
+      selector: 'table',
+      allowedColNames: {
+        'Car Name': 'car',
+        'Horse Powers': 'hp',
+        'Manufacture Year': 'year',
+      },
+    } as const;
+
+    const innerText = await tableParser(page, {
+      ...options,
+      cellTextSource: CellTextSource.INNER_TEXT,
+    });
+    const textContent = await tableParser(page, {
+      ...options,
+      cellTextSource: CellTextSource.TEXT_CONTENT,
+    });
+
+    // On a whitespace-clean table (no interior whitespace runs, <br>, or hidden
+    // nodes) the faster textContent path yields byte-identical output.
+    expect(textContent).toBe(innerText);
+    expect(textContent).toMatchInlineSnapshot(`
+      "car;hp;year
+      Audi S5;332;2015
+      Alfa Romeo Giulia;500;2020
+      BMW X3;215;2017
+      Skoda Octavia;120;2012"
+    `);
+  });
+
+  it('Rejects an invalid cellTextSource value', async () => {
+    await page.goto(`${getBaseUrl()}/1.html`);
+
+    await expect(
+      tableParser(page, {
+        selector: 'table',
+        allowedColNames: { 'Car Name': 'car' },
+        // @ts-expect-error intentionally invalid value
+        cellTextSource: 'nope',
+      }),
+    ).rejects.toThrow(/cellTextSource/);
   });
 
   it('Exclude columns', async () => {

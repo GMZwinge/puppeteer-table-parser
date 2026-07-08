@@ -12,6 +12,22 @@ export enum RowValidationPolicy {
   EXACT_MATCH = 'EXACT_MATCH',
 }
 
+export enum CellTextSource {
+  /**
+   * Read body cells via `HTMLElement.innerText`. Reflects the rendered text
+   * (collapses whitespace, turns `<br>` into newlines, omits hidden nodes) but
+   * forces a synchronous layout/reflow for every cell.
+   */
+  INNER_TEXT = 'innerText',
+  /**
+   * Read body cells via `Node.textContent`. Returns the raw source text without
+   * triggering layout, which is markedly faster on large tables. Differs from
+   * `innerText` on interior whitespace runs, `<br>` elements, and
+   * `display:none` descendants.
+   */
+  TEXT_CONTENT = 'textContent',
+}
+
 export type GroupByOptions = {
   cols: string[];
   handler?: (rows: string[][], getColumnIndex: GetColumnIndexType) => string[];
@@ -56,6 +72,7 @@ export type ParserSettingsOptional = {
   headerRowsCellSelector: string;
   bodyRowsSelector: string;
   bodyRowsCellSelector: string;
+  cellTextSource: CellTextSource;
   excludedColumns: (rows: string[][], getColumnIndex: GetColumnIndexType) => string[];
 };
 

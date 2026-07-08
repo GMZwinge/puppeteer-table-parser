@@ -1,4 +1,4 @@
-import { FullParserSettings, RowValidationPolicy } from './types';
+import { CellTextSource, FullParserSettings, RowValidationPolicy } from './types';
 import { extraColsMapperFactory, getColumnsInfo } from './helpers';
 import { ElementHandle } from 'puppeteer';
 import { InvalidSettingsError } from './errors';
@@ -62,7 +62,14 @@ export function parseTableFactory(settings: FullParserSettings) {
     return await table.evaluate(
       (
         el,
-        { reverseTraversal, allowedIndexes, bodyRowsSelector, rowsOffset, bodyRowsCellSelector },
+        {
+          reverseTraversal,
+          allowedIndexes,
+          bodyRowsSelector,
+          rowsOffset,
+          bodyRowsCellSelector,
+          useTextContent,
+        },
       ) => {
         const rows = Array.from(el.querySelectorAll(bodyRowsSelector));
         rows.splice(0, rowsOffset);
@@ -73,6 +80,10 @@ export function parseTableFactory(settings: FullParserSettings) {
         const allowedIndexesMap = new Map(
           Object.entries(allowedIndexes).map(([k, v]) => [Number(k), v]),
         );
+        // `textContent` avoids the synchronous layout/reflow that `innerText`
+        // forces per cell, which dominates parse time on large tables. It is
+        // opt-in because it changes output on interior whitespace, `<br>`, and
+        // hidden nodes (see the `cellTextSource` setting).
         return rows.map((row) =>
           Array.from(row.querySelectorAll(bodyRowsCellSelector))
             .map((cell, realIndex): [Element, number] => [cell, realIndex])
@@ -83,7 +94,11 @@ export function parseTableFactory(settings: FullParserSettings) {
 
               return indexA - indexB;
             })
-            .map(([cell]): string => (cell as HTMLElement)?.innerText ?? cell?.textContent),
+            .map(([cell]): string =>
+              useTextContent
+                ? cell?.textContent ?? (cell as HTMLElement)?.innerText
+                : (cell as HTMLElement)?.innerText ?? cell?.textContent,
+            ),
         );
       },
       {
@@ -92,6 +107,7 @@ export function parseTableFactory(settings: FullParserSettings) {
         bodyRowsCellSelector: settings.bodyRowsCellSelector,
         allowedIndexes,
         rowsOffset,
+        useTextContent: settings.cellTextSource === CellTextSource.TEXT_CONTENT,
       },
     );
   };
