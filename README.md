@@ -40,13 +40,13 @@ interface ParserSettings {
   selector: string; // CSS selector
   allowedColNames: Record<string, string>; // key = input name, value = output name)
 
-  headerRowsSelector?: string | null; // (default: 'thead tr', null ignores table's header selection)
+  headerRowsSelector?: string | null; // (default: '. thead tr', null ignores table's header selection)
   headerRowsRelativeSelector?: string | null; // (default: null uses headerRowsSelector, overrides headerRowsSelector with something like `${selector} thead tr`)
-  headerRowsCellSelector?: string; // (default: 'td,th')
+  headerRowsCellSelector?: string; // (default: '. td,. th')
   headerRowsCellRelativeSelector?: string; // (default: null uses headerRowsCellSelector, overrides headerRowsCellSelector with something like `${selector} thead tr td,${selector} thead tr th`, )
-  bodyRowsSelector?: string;  // (default: 'tbody tr')
+  bodyRowsSelector?: string;  // (default: '. tbody tr')
   bodyRowsRelativeSelector?: string;  // (default: null uses bodyRowsSelector, overrides bodyRowsSelector with something like  `${selector} tbody tr`)
-  bodyRowsCellSelector?: string;  // (default: 'td')
+  bodyRowsCellSelector?: string;  // (default: '. td')
   bodyRowsCellRelativeSelector?: string;  // (default: null uses bodyRowsCellSelector, overrides bodyRowsCellSelector with something like  `${selector} tbody tr td`)
   cellTextSource?: CellTextSource; // (default: 'innerText') see "Cell text source" below
   reverseTraversal?: boolean // (default: false)
